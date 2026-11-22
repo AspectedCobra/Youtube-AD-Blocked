@@ -1,0 +1,16 @@
+[package]
+name = "ytonly"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tao = "0.34"
+wry = "0.53"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
