@@ -45,29 +45,28 @@
     if (a) a.target = '_self';
   }, true);
 
-  // ---- Shorts auto-advance ----
+  // ---- Shorts auto-advance + backup ad skipper (event-driven, no polling) ----
   let advancing = false;
   const next = () => {
     const b = document.querySelector('#navigation-button-down button, #navigation-button-down');
     if (b) { b.click(); return; }
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', keyCode: 40, bubbles: true }));
   };
-  setInterval(() => {
+  // timeupdate doesn't bubble, so listen in the capture phase; it only fires while a video plays
+  document.addEventListener('timeupdate', (e) => {
+    const v = e.target;
+    if (!(v instanceof HTMLVideoElement) || !isFinite(v.duration) || v.duration < 1) return;
+    if (v.closest('.html5-video-player.ad-showing')) {
+      v.muted = true; v.currentTime = v.duration;
+      const s = document.querySelector('.ytp-skip-ad-button, .ytp-ad-skip-button, .ytp-ad-skip-button-modern');
+      if (s) s.click();
+      return;
+    }
     if (!location.pathname.startsWith('/shorts/')) return;
-    const v = document.querySelector('ytd-reel-video-renderer[is-active] video') || document.querySelector('video');
-    if (!v || !isFinite(v.duration) || v.duration < 1) return;
     v.loop = false;
     if (!advancing && (v.ended || v.duration - v.currentTime < 0.4)) {
       advancing = true; next();
       setTimeout(() => { advancing = false; }, 1500);
     }
-  }, 200);
-
-  // ---- Backup ad skipper (in case the extension can't load) ----
-  setInterval(() => {
-    const s = document.querySelector('.ytp-skip-ad-button, .ytp-ad-skip-button, .ytp-ad-skip-button-modern');
-    if (s) s.click();
-    const ad = document.querySelector('.html5-video-player.ad-showing video');
-    if (ad && isFinite(ad.duration) && ad.duration > 0) { ad.muted = true; ad.currentTime = ad.duration; }
-  }, 300);
+  }, true);
 })();
