@@ -83,7 +83,14 @@ fn main() -> wry::Result<()> {
         .with_url("https://www.youtube.com")
         .with_background_color((0, 0, 0, 255))
         .with_initialization_script(INJECT_JS)
-        .with_navigation_handler(|u| allowed(&u));
+        .with_navigation_handler(|u| allowed(&u))
+        // GPU rendering + hardware video decode (keeps wry's default feature flags too)
+        .with_additional_browser_args(
+            "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection \
+             --enable-features=D3D11VideoDecoder,CanvasOopRasterization \
+             --enable-gpu-rasterization --enable-zero-copy --ignore-gpu-blocklist \
+             --enable-smooth-scrolling",
+        );
 
     #[cfg(windows)]
     let builder = builder
